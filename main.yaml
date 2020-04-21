@@ -1,0 +1,72 @@
+---
+  - name: EKS Cluster Setup
+    hosts: localhost
+    tasks:
+
+    - name: Checking pre-requisite installations
+      shell: ./scripts/check_requirements.sh {{ item }}
+      with_items: ['eksctl','aws','tutor']
+      tags: 
+        - check_requirements
+        - eks_setup
+
+    - name: Deploy AWS EKS Cluster Control Plane
+      shell:
+        eksctl create cluster --name openedx --version 1.14 --region eu-west-1
+      tags:
+        - cluster_deploy
+        - eks_setup
+    - name: Set kube configuration
+      shell:
+        aws eks --region eu-west-1 update-kubeconfig --name openedx
+      tags:
+        - cluster_deploy
+        - eks_setup
+
+    - name: Deploy NodeGroup on AWS EKS Cluster
+      shell:
+        eksctl create nodegroup --cluster openedx --region eu-west-1 --name edxnodes --node-type t2.medium --nodes 3 --nodes-min 3 --nodes-max 4 --node-volume-size 25 --managed --alb-ingress-access
+      tags:
+        - node_deploy
+        - eks_setup
+
+    - name: Setting up IAM OpenID Connect Provider
+      shell:
+        eksctl utils associate-iam-oidc-provider --region eu-west-1 --cluster openedx --approve
+      tags:
+        - ingress_controller
+        - ingress_iam
+    
+    - name: Create IAM Policy
+      shell:
+        aws iam create-policy --policy-name ALBIngressControllerIAMPolicy --policy-document https://raw.githubusercontent.com/kubernetes-sigs/aws-alb-ingress-controller/v1.1.4/docs/examples/iam-policy.json
+      tags:
+        - ingress_controller
+        - ingress_iam
+    
+    - name: Create Cluster Role and Service Account
+      shell:
+        kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/aws-alb-ingress-controller/v1.1.4/docs/examples/rbac-role.yaml
+      tags:
+        - ingress_controller
+        - ingress_iam
+    
+    - name: Creating IAM Service Account and attaching Policy
+      shell: |
+        AccNo=`aws sts get-caller-identity --query Account`;
+        eksctl create iamserviceaccount --region eu-west-1 --name alb-ingress-controller --namespace kube-system --cluster openedx --attach-policy-arn arn:aws:iam::${AccNo//\"/}:policy/ALBIngressControllerIAMPolicy --override-existing-serviceaccounts --approve
+      tags:
+        - ingress_controller
+        - ingress_iam
+    
+    - name: Deploy Ingress Controller
+      shell: |
+        VpcId=`aws eks describe-cluster --name openedx --query cluster.resourcesVpcConfig.vpcId`;
+        VpcId=${VpcId//\"/};
+        sed "s/_VPC_ID_/$VpcId/" alb-ingress-controller.yaml > output.yaml;
+        kubectl apply -f output.yaml
+      tags:
+        - ingress_controller
+        - ingress_deployment
+
+
