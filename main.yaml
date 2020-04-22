@@ -1,6 +1,19 @@
 ---
   - name: EKS Cluster Setup
     hosts: localhost
+    vars_prompt:
+      - name: LMS_HOST
+        prompt: Your website domain name for students (LMS)
+        private: no
+      - name: CMS_HOST
+        prompt: Your website domain name for teachers (CMS)
+        private: no
+      - name: PLATFORM_NAME
+        prompt: Your platform name/title
+        private: no
+      - name: CONTACT_EMAIL
+        prompt: Your public contact email address
+        private: no
     tasks:
 
     - name: Checking pre-requisite installations
@@ -69,4 +82,15 @@
         - ingress_controller
         - ingress_deployment
 
+    - name: Save Tutor Configurations
+      shell: 
+        printf '{{ LMS_HOST }}\n{{ CMS_HOST }}\n{{ PLATFORM_NAME }}\n{{ CONTACT_EMAIL }}\nen\nN' | tutor config save --interactive
+      tags:
+        - tutor
+        - tutor_config
 
+    - name: Deploy OpenEdx 
+      shell: 
+        tutor k8s quickstart --non-interactive
+      tags:
+        - tutor
