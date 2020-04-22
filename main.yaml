@@ -58,8 +58,9 @@
         - ingress_iam
     
     - name: Create Cluster Role and Service Account
-      shell:
-        kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/aws-alb-ingress-controller/v1.1.4/docs/examples/rbac-role.yaml
+      k8s:
+        state: present
+        src: templates/rbac-role.yaml
       tags:
         - ingress_controller
         - ingress_iam
@@ -72,12 +73,18 @@
         - ingress_controller
         - ingress_iam
     
-    - name: Deploy Ingress Controller
+    - name: Edit Ingress Controller
       shell: |
         VpcId=`aws eks describe-cluster --name openedx --query cluster.resourcesVpcConfig.vpcId`;
         VpcId=${VpcId//\"/};
-        sed "s/_VPC_ID_/$VpcId/" alb-ingress-controller.yaml > output.yaml;
-        kubectl apply -f output.yaml
+        sed "s/_VPC_ID_/$VpcId/" templates/alb-ingress-controller.yaml > templates/alb-ingress-controller-out.yaml;
+      tags:
+        - ingress_controller
+        - ingress_deployment
+    - name: Deploy Ingress Controller
+      k8s:
+        state: present
+        src: templates/alb-ingress-controller-out.yaml
       tags:
         - ingress_controller
         - ingress_deployment
