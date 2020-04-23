@@ -1,0 +1,26 @@
+---
+  - name: Test Playbook
+    hosts: localhost
+    
+    gather_facts: no
+    tasks:
+
+
+    - name: Deploy OpenEdx 
+      shell: 
+        tutor k8s quickstart --non-interactive
+      async: 216000
+      poll: 0
+      register: quickstart_task
+      tags:
+        - tutor
+
+
+    - name: check
+      shell: |
+        status="";
+        while [[ $status != "web" ]];
+        do
+          status=$(kubectl get -n openedx ingress.extensions/web | awk '{print $1}' | grep web);
+        done;
+        kubectl annotate ingress.extensions/web -n openedx kubernetes.io/ingress.class=alb alb.ingress.kubernetes.io/scheme=internet-facing
