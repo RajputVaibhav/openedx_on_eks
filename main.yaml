@@ -95,9 +95,37 @@
       tags:
         - tutor
         - tutor_config
+        - tutor_pre
 
-    - name: Deploy OpenEdx 
+    - name: Run all configured Open edX services
       shell: 
-        tutor k8s quickstart --non-interactive
+        tutor k8s start
       tags:
         - tutor
+        - tutor_pre
+    
+    - name: Annotate ingress to create ALB
+      shell: |
+        status="";
+        while [[ $status != "web" ]];
+        do
+          status=$(kubectl get -n openedx ingress.extensions/web | awk '{print $1}' | grep web);
+        done;
+        kubectl annotate ingress.extensions/web -n openedx kubernetes.io/ingress.class=alb alb.ingress.kubernetes.io/scheme=internet-facing
+      tags:
+        - tutor
+        - dns_config
+
+    - name: Create Route 53 record set
+      shell:
+        # To-do
+      tags:
+        - tutor
+        - dns_config
+
+    - name: Initialize all applications
+      shell:
+        tutor k8s init
+      tags:
+        - tutor
+        - tutor_post
