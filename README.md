@@ -17,5 +17,6 @@ To run the ansible book components use `--tags` and refer to following tags-comp
 | ingress_deployment | Deploy Ingress controller                                                                                                      |
 | tutor              | Run all tutor deployment steps and configure dns entries                                                                       |
 | tutor_config       | Save configurations for tutor                                                                                                  |
-| tutor_pre          | Create all services without starting platform |  dns_config | Annotate ingress controller to create ALB and make Route53 entry |
+| tutor_pre          | Create all services without starting platform                                                                                  |
+| dns_config         | Annotate ingress controller to create ALB and make Route53 entry                                                               |
 | tutor_post         | Initialize platform                                                                                                            |
