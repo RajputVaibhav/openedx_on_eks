@@ -1,0 +1,31 @@
+{
+    "Comment": "Adding record for LMS and other extensions",
+    "Changes": [
+      {
+        "Action": "CREATE",
+        "ResourceRecordSet": {
+          "Name": "_LMS_HOST_",
+          "Type": "CNAME",
+          "TTL": 300,
+          "ResourceRecords": [
+            {
+              "Value": "_ALB_DNS_"
+            }
+          ]
+        }
+      },
+      {
+        "Action": "CREATE",
+        "ResourceRecordSet": {
+          "Name": "*._LMS_HOST_",
+          "Type": "CNAME",
+          "TTL": 300,
+          "ResourceRecords": [
+            {
+              "Value": "_LMS_HOST_"
+            }
+          ]
+        }
+      }
+    ]
+  }

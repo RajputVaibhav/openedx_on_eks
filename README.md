@@ -20,3 +20,12 @@ To run the ansible book components use `--tags` and refer to following tags-comp
 | tutor_pre          | Create all services without starting platform                                                                                  |
 | dns_config         | Annotate ingress controller to create ALB and make Route53 entry                                                               |
 | tutor_post         | Initialize platform                                                                                                            |
+
+<br/>
+
+---
+**NOTE**
+
+It is assumed that a Route53 hosted zone has been created which will be used as nameserver for your domain.
+
+---

@@ -14,6 +14,9 @@
       - name: CONTACT_EMAIL
         prompt: Your public contact email address
         private: no
+      - name: ROUTE53_HZ
+        prompt: Route53 hosted zone
+        private: no
     tasks:
 
     - name: Checking pre-requisite installations
@@ -116,9 +119,20 @@
         - tutor
         - dns_config
 
+    # - name: Create Route 53 hosted zone
+    #   shell:
+    #     aws route53 create-hosted-zone --name {{ ROUTE53_HZ }} --caller-reference "open_edx" --query HostedZone.Id
+    #   register: HZ_ID
+    #   tags:
+    #     - tutor
+    #     - dns_config
     - name: Create Route 53 record set
-      shell:
-        # To-do
+      shell: |
+        ALB_DNS_NAME=$(kubectl get -n openedx ingress.extensions/web | awk 'FNR == 1 {print $3}');
+        HZ_ID=$(aws route53 list-hosted-zones --query 'HostedZones[?CallerReference==`open_edx`].Id');
+        HZ_ID=$(echo $HZ_ID | tr -d []\");
+        sed -e "s/_LMS_HOST_/{{ LMS_HOST }}/g" -e "s/_ALB_DNS_/$ALB_DNS_NAME/" templates/record_set.json > templates/record_set_out.json;
+        aws route53 change-resource-record-sets --hosted-zone-id ${HZ_ID} --change-batch templates/record_set_out.json    
       tags:
         - tutor
         - dns_config
